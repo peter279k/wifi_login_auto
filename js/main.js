@@ -5,20 +5,26 @@ function setting(email,pass) {
         else if(pass==="")
             return "密碼為空！";
         else {
-            addAccount(email,pass);
-            return "設定完成！";
+             return addAccount(email,pass);
         }
 }
 //reset the email and password.
 function reset() {
+    var db = connectDB();
+    var result = "";
     db.transaction(
         function(tx) {
             // Create the database if it doesn't already exist
-            tx.executeSql('CREATE TABLE IF NOT EXISTS account(email TEXT, password TEXT)');
             //delete the acccounts table.
-            var accounts = tx.executeSql("DELETE * FROM accounts");
-            return "重新設定成功！";
-        })
+            var checkTable = tx.executeSql("SELECT *  FROM account");
+            if(checkTable.rows.length === 0)
+                result = "未設定過帳號！";
+            else {
+                var accounts = tx.executeSql("DELETE FROM account");
+                result = "重新設定成功！";
+            }
+        });
+     return result;
 }
 //using XMLHttpRequest post email and password to login automatically.
 function autoLogin(email,password) {
@@ -54,22 +60,23 @@ function autoLogin(email,password) {
 //LocalStorage ref: http://doc.qt.io/qt-5/qtquick-localstorage-qmlmodule.html
 function addAccount(email,password) {
             var db = connectDB();
+            var result = "";
             db.transaction(
                 function(tx) {
                     // Create the database if it doesn't already exist
-                    tx.executeSql('CREATE TABLE IF NOT EXISTS account(email TEXT, password TEXT)');
                     //check the acccounts table row length
-                    var accounts = tx.executeSql("SELECt * FROM accounts");
+                    var accounts = tx.executeSql("SELECt * FROM account");
                     if(accounts.rows.length!==0) {
-                        return "帳號只能設定一組！";
+                        result =  "帳號只能設定一組！";
                     }
                     else {
                         // Add (another) account row
                         //tx.executeSql("SQL syntax.", Array())
                         tx.executeSql('INSERT INTO account VALUES(?, ?)', [email , password ]);
-                        return "帳號設定成功！";
+                        result = "帳號設定成功！";
                     }
-                })
+                });
+           return result;
 }
 /*
     get accounts about email and password.When components are loaded completely, it will set the email's textField
@@ -80,11 +87,10 @@ function getAccounts() {
     var result = new Array;
     db.transaction(
         function(tx) {
-             tx.executeSql('CREATE TABLE IF NOT EXISTS account(email TEXT, password TEXT)');
             var accounts = tx.executeSql("SELECt * FROM account");
             for(var acc_count = 0; acc_count < accounts.rows.length; acc_count++) {
-                result[0] = rs.rows.item(i).email;
-                result[1] = rs.rows.item(i).password;
+                result[0] = accounts.rows.item(acc_count).email;
+                result[1] = accounts.rows.item(acc_count).password;
             }
 
         });
@@ -94,6 +100,11 @@ function getAccounts() {
 //initial DB connection.
 function connectDB() {
     var db = LocalStorage.openDatabaseSync("accountDB", "1.0", "The Example QML SQL!", 1000000);
+    db.transaction(
+                function(tx) {
+                     tx.executeSql('CREATE TABLE IF NOT EXISTS account(email TEXT, password TEXT)');
+                }
+    )
     return db;
 }
 

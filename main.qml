@@ -110,7 +110,8 @@ ApplicationWindow {
                         Layout.fillWidth: true
                         onClicked: {
                             var result = Main.setting(mailText.getText(0,mailText.length), passText.getText(0,passText.length));
-                            msgTxt.text = result;
+                            if(result!==undefined)
+                                msgTxt.text = result;
                             msgDialog.open();
                         }
                      }
@@ -123,6 +124,10 @@ ApplicationWindow {
                          id: resetBtn
                         text: "重新設定"
                          Layout.fillWidth: true
+                         onClicked: {
+                             msgTxt.text = Main.reset();
+                             msgDialog.open();
+                         }
                      }
                  }
                  RowLayout {
