@@ -33,19 +33,20 @@ function autoLogin(email,password) {
             //do httprequest post data to the login url.
             var result = httpGet("https://google.com.tw");
             var data = "";
-            if(result==="need_auth") {
+            if(result.indexOf("magic")===0) {
+                var magic = result.split("=");
                 url[0] = "http://10.1.230.254:1000/fgtauth?";
                 url[1] = "http://www.gstatic.com/generate_204";
-                data = "username=your-school-email&password=your-pwd&4Tredir=http://google.com.tw&magic=";
-                httpPost(url,data,"need_auth");
+                data = "username=your-school-email&password=your-pwd&4Tredir=http://google.com.tw&magic="+magic[1];
+                result = httpPost(url,data,"need_auth");
             }
-            else if(result==="need_auth2") {
-                url[0] = "";
-                url[1] = "";
+            if(result==="need_auth2") {
+                data = "user=your-school-email&password=your-pwd&authenticate=authenticate&accept_aup=accept_aup";
+                url[0] = "https://securelogin.arubanetworks.com/cgi-bin/login";
+                result = httpPost(url[0],data,"need_auth2");
             }
-            else {
-                return result;
-            }
+
+            return result;
         }
 }
 //add email and password
@@ -105,7 +106,9 @@ function httpGet(url) {
             var web_page = doc.responseText;
 
             if(web_page.indexOf("台東大學無線網路驗證系統")===0) {
-                return "need_auth";
+               var magic = web_page.search('magic');
+               magic = web_page.substring([magic+14], 16);
+                return "magic="+magic;
             }
             else if(web_page.indexOf("USERNAME")===0) {
                 return "need_auth2";
@@ -121,9 +124,49 @@ function httpGet(url) {
     doc.send();
 }
 
-function httpPost(url,data,type) {
-    if(type==="need_auth") {
-
-
+function checkHttpGet(url) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            var web_page = xhr.responseText;
+        }
+        if(web_page!=="")
+            return true;
+        else
+            return false;
     }
+
+    xhr.setRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+    xhr.setRequestHeader("User-Agent", "Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36");
+    xhr.send();
+}
+
+function httpPost(url,data,type) {
+    var xhr = new XMLHttpRequest();
+    var result = "";
+    if(type==="need_auth") {
+        if(checkHttpGet(url[0])===true) {
+            url = url[0];
+        }
+        else {
+            url = url[1];
+        }
+    }
+
+    xhr.open("POST", url);
+    xhr.onreadystatechange = function() {
+        if(xhr.readyState === XMLHttpRequest.DONE) {
+            result = httpGet(url[0]);
+            if(result.indexOf("已經正在上網或是不在學校網域內！")===0) {
+                return "auth_success";
+            }
+            else {
+                return "auth_fail";
+            }
+        }
+    }
+    xhr.setRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+    xhr.setRequestHeader("User-Agent", "Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36");
+    xhr.send();
 }
