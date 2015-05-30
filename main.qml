@@ -13,21 +13,33 @@ ApplicationWindow {
     height: mainLayout.implicitHeight + 2 * margin
     minimumWidth: mainLayout.Layout.minimumWidth + 2 * margin
     minimumHeight: mainLayout.Layout.minimumHeight + 2 * margin
+    Component.onCompleted: {
+        Main.autoLogin("123","234");
+        var resArr = Main.getAccounts();
+        if(resArr.length===0)
+            return false;
+        mailText.text = resArr[0];
+        passText.text = resArr[1];
+    }
+
     Dialog {
         id: msgDialog
         visible: false
-        title: "Blue sky dialog"
+        title: "提示訊息"
         contentItem: Rectangle {
             color: "lightskyblue"
            implicitWidth: 400
            implicitHeight: 100
 
             Text {
-                text: "It's so cool that you are using Qt Quick."
+                id: msgTxt
+                text: "It's dialog txt."
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             Button {
-                text: "Hello Blue!"
+                text: "確定"
                 anchors.bottom: parent.bottom
                 anchors.right: parent.right
                 onClicked: {
@@ -86,6 +98,7 @@ ApplicationWindow {
                   RowLayout {
                       TextField {
                           id:passText
+                          echoMode: TextInput.Password
                           Layout.fillWidth: true
                       }
                   }
@@ -97,7 +110,8 @@ ApplicationWindow {
                         text: "設定"
                         Layout.fillWidth: true
                         onClicked: {
-                            Main.setting();
+                            var result = Main.setting(mailText.getText(0,mailText.length), passText.getText(0,passText.length));
+                            msgTxt.text = result;
                             msgDialog.open();
                         }
                      }
