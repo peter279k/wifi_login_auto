@@ -14,7 +14,6 @@ ApplicationWindow {
     minimumWidth: mainLayout.Layout.minimumWidth + 2 * margin
     minimumHeight: mainLayout.Layout.minimumHeight + 2 * margin
     Component.onCompleted: {
-        Main.autoLogin("123","234");
         var resArr = Main.getAccounts();
         if(resArr.length===0)
             return false;
