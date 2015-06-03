@@ -26,24 +26,26 @@ function reset() {
         });
      return result;
 }
+
 //using XMLHttpRequest post email and password to login automatically.
-function autoLogin(email,password) {
+function autoLogin(email,password,result) {
         var url = new Array;
-        if(email==="") {
-            console.log("email empty!")
+        if(email==="" || password==="") {
+            getAccounts();
         }
-        else if(password==="") {
-            console.log("password empty!")
+        if(email==="" && mailText.text.toString() === "") {
+            result = "信箱為空！";
+        }
+        else if(password==="" && passText.text.toString() === "") {
+            result = "密碼為空！";
         }
         else {
             //do httprequest post data to the login url.
-            var result = httpGet("https://google.com.tw");
             var data = "";
             if(result.indexOf("magic")===0) {
-                var magic = result.split("=");
                 url[0] = "http://10.1.230.254:1000/fgtauth?";
                 url[1] = "http://www.gstatic.com/generate_204";
-                data = "username=your-school-email&password=your-pwd&4Tredir=http://google.com.tw&magic="+magic[1];
+                data = "username="+mailText.text.toString()+"&password="+passText.text.toString()+"&4Tredir=http://google.com.tw&"+result;
                 result = httpPost(url,data,"need_auth");
             }
             if(result==="need_auth2") {
@@ -51,10 +53,10 @@ function autoLogin(email,password) {
                 url[0] = "https://securelogin.arubanetworks.com/cgi-bin/login";
                 result = httpPost(url[0],data,"need_auth2");
             }
-
-            return result;
         }
+         return result;
 }
+
 //add email and password
 //object openDatabaseSync(string name, string version, string description, int estimated_size, jsobject callback(db))
 //LocalStorage ref: http://doc.qt.io/qt-5/qtquick-localstorage-qmlmodule.html
@@ -94,7 +96,13 @@ function getAccounts() {
             }
 
         });
-    return result;
+
+        if(result.length===0)
+            return false;
+        mailText.text = "";
+        passText.text = "";
+        mailText.text = result[0];
+        passText.text = result[1];
 }
 
 //initial DB connection.
@@ -111,25 +119,29 @@ function connectDB() {
 //using XMLHttpRequest create function called http_get
 function httpGet(url) {
     var doc = new XMLHttpRequest();
+    var result = "";
+    var web_page = "";
+
     doc.open("GET", url);
+
     doc.onreadystatechange = function() {
         if (doc.readyState === XMLHttpRequest.DONE) {
-            var web_page = doc.responseText;
-
+            web_page = doc.responseText;
             if(web_page.indexOf("台東大學無線網路驗證系統")===0) {
                var magic = web_page.search('magic');
                magic = web_page.substring([magic+14], 16);
-                return "magic="+magic;
+                result = "magic="+magic;
             }
             else if(web_page.indexOf("USERNAME")===0) {
-                return "need_auth2";
+                result = "need_auth2";
             }
-
             else {
-                    return "已經正在上網或是不在學校網域內！";
+                  result = "已經正在上網或是不在學校網域內！";
             }
+            msgTxt.text = result;
         }
      }
+
     doc.setRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
     doc.setRequestHeader("User-Agent", "Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36");
     doc.send();
@@ -170,10 +182,10 @@ function httpPost(url,data,type) {
         if(xhr.readyState === XMLHttpRequest.DONE) {
             result = httpGet(url[0]);
             if(result.indexOf("已經正在上網或是不在學校網域內！")===0) {
-                return "auth_success";
+                msgTxt.text = "驗證成功！";
             }
             else {
-                return "auth_fail";
+                msgTxt.text = "驗證失敗！";
             }
         }
     }

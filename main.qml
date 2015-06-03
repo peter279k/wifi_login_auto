@@ -14,11 +14,7 @@ ApplicationWindow {
     minimumWidth: mainLayout.Layout.minimumWidth + 2 * margin
     minimumHeight: mainLayout.Layout.minimumHeight + 2 * margin
     Component.onCompleted: {
-        var resArr = Main.getAccounts();
-        if(resArr.length===0)
-            return false;
-        mailText.text = resArr[0];
-        passText.text = resArr[1];
+        Main.getAccounts();
     }
 
     Dialog {
@@ -32,7 +28,7 @@ ApplicationWindow {
 
             Text {
                 id: msgTxt
-                text: "It's dialog txt."
+                text: "請稍後..."
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -43,6 +39,7 @@ ApplicationWindow {
                 anchors.right: parent.right
                 onClicked: {
                     msgDialog.close();
+                    msgTxt.text = "請稍候...";
                 }
             }
 
@@ -119,6 +116,12 @@ ApplicationWindow {
                          id: autoBtn
                         text: "自動登入"
                          Layout.fillWidth: true
+                         onClicked: {
+                              Main.httpGet("https://google.com.tw");
+                              var result = Main.autoLogin(mailText.getText(0,mailText.length), passText.getText(0,passText.length),msgTxt.text.toString());
+                             msgTxt.text = result;
+                             msgDialog.open();
+                         }
                      }
                      Button {
                          id: resetBtn
